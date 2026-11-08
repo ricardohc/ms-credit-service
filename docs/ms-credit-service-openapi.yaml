@@ -1,0 +1,257 @@
+openapi: 3.0.3
+info:
+  title: Credit Service API
+  description: Gestión de créditos personales y empresariales. Pagos delegados a Transaction Service.
+  version: 1.0.0
+
+tags:
+  - name: Credit
+    description: Operaciones de gestión de créditos
+
+security:
+  - BearerAuth: []
+paths:
+  /api/v1/credits:
+    get:
+      tags:
+        - Credit
+      summary: Listar créditos
+      operationId: findAllCredits
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+      responses:
+        '200':
+          description: Lista paginada
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreditPage' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    post:
+      tags:
+        - Credit
+      summary: Crear crédito
+      operationId: createCredit
+      parameters:
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreditCreateRequest' } } }
+      responses:
+        '201':
+          description: Crédito creado
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreditResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/credits/{creditId}:
+    get:
+      tags:
+        - Credit
+      summary: Obtener crédito por ID
+      operationId: findCreditById
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+      responses:
+        '200':
+          description: Detalle del crédito
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreditResponse' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    patch:
+      tags:
+        - Credit
+      summary: Actualizar crédito (parcial)
+      description: Solo permite actualizaciones administrativas. Las transiciones de estado financiero (ej. PAID) deben ocurrir por pagos o procesos automáticos, no por PATCH. No se permite marcar como PAID si el balance es mayor a cero.
+      operationId: updateCredit
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreditUpdateRequest' } } }
+      responses:
+        '200':
+          description: Crédito actualizado
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreditResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    delete:
+      tags:
+        - Credit
+      summary: Baja lógica de crédito
+      operationId: deactivateCredit
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      responses:
+        '204': { description: Crédito desactivado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/credits/{creditId}/payments:
+    post:
+      tags:
+        - Credit
+      summary: Pagar crédito (propio o de terceros)
+      description: |
+        Idempotente. Delega en Transaction Service.
+        - Si el pago es parcial, reduce el balance.
+        - Si el pago es total, marca PAID.
+        - Si el pago supera la deuda pendiente, se rechaza con 422 (no se genera saldo a favor).
+        - Si el crédito está OVERDUE, se permite el pago, pero no se puede crear un nuevo producto.
+        - Si se intenta pagar dos veces con el mismo X-Transaction-ID, retorna la transacción original.
+      operationId: createCreditPayment
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreditPaymentRequest' } } }
+      responses:
+        '202':
+          description: Pago aceptado
+          content: { application/json: { schema: { $ref: '#/components/schemas/OperationAcceptedResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/credits/{creditId}/overdue-status:
+    get:
+      tags:
+        - Credit
+      summary: Consultar estado de deuda vencida
+      operationId: getOverdueStatus
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+      responses:
+        '200':
+          description: Estado de deuda
+          content: { application/json: { schema: { $ref: '#/components/schemas/OverdueStatusResponse' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+components:
+  securitySchemes:
+    BearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    PageParam: { name: page, in: query, schema: { type: integer, default: 0, minimum: 0 } }
+    SizeParam: { name: size, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 100 } }
+    CorrelationIdHeader: { name: X-Correlation-ID, in: header, required: true, schema: { type: string } }
+    ChannelIdHeader: { name: X-Channel-ID, in: header, required: true, schema: { type: string } }
+    TransactionIdHeader: { name: X-Transaction-ID, in: header, required: true, schema: { type: string, format: uuid } }
+    CreditIdPath: { name: creditId, in: path, required: true, schema: { type: string, format: uuid } }
+  schemas:
+    CreditType: { type: string, enum: [PERSONAL, BUSINESS] }
+    CreditStatus: { type: string, enum: [ACTIVE, PAID, OVERDUE, CANCELLED] }
+    CreditCreateRequest:
+      type: object
+      required: [customerId, type, amount, currency, termMonths]
+      properties:
+        customerId: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/CreditType' }
+        amount: { type: string, pattern: '^(?!0+(\.0+)?$)[0-9]+(\.[0-9]{1,2})?$' }
+        currency: { type: string, pattern: '^[A-Z]{3}$', example: PEN }
+        termMonths: { type: integer, minimum: 1 }
+    CreditUpdateRequest:
+      type: object
+      properties:
+        status: { $ref: '#/components/schemas/CreditStatus' }
+    CreditPaymentRequest:
+      type: object
+      required: [amount, currency, sourceAccountId]
+      properties:
+        amount: { type: string, pattern: '^(?!0+(\.0+)?$)[0-9]+(\.[0-9]{1,2})?$' }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        sourceAccountId: { type: string, format: uuid }
+        payerCustomerId: { type: string, format: uuid, description: "Permite pago de terceros" }
+    CreditResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        customerId: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/CreditType' }
+        status: { $ref: '#/components/schemas/CreditStatus' }
+        amount: { type: string }
+        balance: { type: string }
+        currency: { type: string }
+        dueDate: { type: string, format: date }
+        createdAt: { type: string, format: date-time }
+    CreditPage:
+      type: object
+      properties:
+        content: { type: array, items: { $ref: '#/components/schemas/CreditResponse' } }
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer }
+    OverdueStatusResponse:
+      type: object
+      properties:
+        creditId: { type: string, format: uuid }
+        hasOverdueDebt: { type: boolean }
+        overdueAmount: { type: string }
+        daysOverdue: { type: integer }
+    OperationAcceptedResponse:
+      type: object
+      properties:
+        operationId: { type: string, format: uuid }
+        status: { type: string }
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        timestamp: { type: string, format: date-time }
+        correlationId: { type: string }
+        details: { type: array, items: { type: string } }
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Unauthorized:
+      description: No autenticado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Forbidden:
+      description: No autorizado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    NotFound:
+      description: No encontrado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Conflict:
+      description: Conflicto (ej. deuda vencida)
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    UnprocessableEntity:
+      description: Entidad no procesable
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    InternalServerError:
+      description: Error interno
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }

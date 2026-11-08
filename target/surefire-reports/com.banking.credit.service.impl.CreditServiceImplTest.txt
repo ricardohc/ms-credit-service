@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.banking.credit.service.impl.CreditServiceImplTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.658 s -- in com.banking.credit.service.impl.CreditServiceImplTest

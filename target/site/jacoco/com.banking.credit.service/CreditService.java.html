@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CreditService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ms-credit-service</a> &gt; <a href="index.source.html" class="el_package">com.banking.credit.service</a> &gt; <span class="el_source">CreditService.java</span></div><h1>CreditService.java</h1><pre class="source lang-java linenums">package com.banking.credit.service;
+
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.dto.CreditResponse;
+import com.banking.credit.dto.CreditUpdateRequest;
+import java.math.BigDecimal;
+import java.util.UUID;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/**
+ * Reglas de negocio de creditos (skill-credit.md).
+ */
+public interface CreditService {
+
+    Mono&lt;CreditResponse&gt; create(UUID customerId, String type, BigDecimal amount,
+                                String currency, Integer termMonths, String correlationId);
+
+    Flux&lt;CreditDocument&gt; findAll(int page, int size);
+
+    Mono&lt;CreditDocument&gt; findById(UUID creditId);
+
+    Mono&lt;CreditDocument&gt; update(UUID creditId, CreditUpdateRequest request, String correlationId);
+
+    Mono&lt;Void&gt; deactivate(UUID creditId, String correlationId);
+
+    Mono&lt;OverdueInfo&gt; getOverdueInfo(UUID creditId);
+
+    /** Informacion de deuda vencida para el endpoint /overdue-status y validaciones. */
+<span class="fc" id="L30">    record OverdueInfo(boolean hasOverdueDebt, BigDecimal overdueAmount, long daysOverdue) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

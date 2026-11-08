@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebClientConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ms-credit-service</a> &gt; <a href="index.source.html" class="el_package">com.banking.credit.config</a> &gt; <span class="el_source">WebClientConfig.java</span></div><h1>WebClientConfig.java</h1><pre class="source lang-java linenums">package com.banking.credit.config;
+
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
+
+/**
+ * WebClient hacia ms-transaction-service con timeout de 2 segundos
+ * (regla transversal de Resilience4j / timeouts inter-servicios).
+ */
+@Configuration
+<span class="nc" id="L19">public class WebClientConfig {</span>
+
+    @Bean
+    public WebClient transactionWebClient(
+            @Value(&quot;${transaction-service.base-url:http://ms-transaction-service}&quot;) String baseUrl) {
+<span class="nc" id="L24">        var httpClient = HttpClient.create()</span>
+<span class="nc" id="L25">                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 2000)</span>
+<span class="nc" id="L26">                .responseTimeout(Duration.ofSeconds(2))</span>
+<span class="nc" id="L27">                .doOnConnected(conn -&gt; conn.addHandlerLast(</span>
+                        new ReadTimeoutHandler(2, TimeUnit.SECONDS)));
+<span class="nc" id="L29">        return WebClient.builder()</span>
+<span class="nc" id="L30">                .baseUrl(baseUrl)</span>
+<span class="nc" id="L31">                .clientConnector(new ReactorClientHttpConnector(httpClient))</span>
+<span class="nc" id="L32">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

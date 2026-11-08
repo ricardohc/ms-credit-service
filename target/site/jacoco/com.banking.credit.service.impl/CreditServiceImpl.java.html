@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CreditServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ms-credit-service</a> &gt; <a href="index.source.html" class="el_package">com.banking.credit.service.impl</a> &gt; <span class="el_source">CreditServiceImpl.java</span></div><h1>CreditServiceImpl.java</h1><pre class="source lang-java linenums">package com.banking.credit.service.impl;
+
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.event.CreditEvent;
+import com.banking.credit.dto.CreditResponse;
+import com.banking.credit.event.CreditEventPublisher;
+import com.banking.credit.exception.CreditConflictException;
+import com.banking.credit.exception.CreditNotFoundException;
+import com.banking.credit.mapper.CreditMapper;
+import com.banking.credit.repository.CreditRepository;
+import com.banking.credit.service.CreditService;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/**
+ * Implementacion reactiva (Mono/Flux) de las reglas de negocio de creditos.
+ * Transiciones financieras (PAID, OVERDUE) solo por pagos o procesos automaticos.
+ */
+<span class="fc" id="L28">@Slf4j</span>
+@Service
+<span class="fc" id="L30">@RequiredArgsConstructor</span>
+public class CreditServiceImpl implements CreditService {
+
+    public static final String TYPE_PERSONAL = &quot;PERSONAL&quot;;
+    public static final String TYPE_BUSINESS = &quot;BUSINESS&quot;;
+
+    private final CreditRepository creditRepository;
+    private final CreditMapper creditMapper;
+    private final CreditEventPublisher eventPublisher;
+
+    @Override
+    public Mono&lt;CreditResponse&gt; create(UUID customerId, String type, BigDecimal amount,
+                                       String currency, Integer termMonths, String correlationId) {
+<span class="fc" id="L43">        return validateType(type)</span>
+<span class="fc" id="L44">                .then(creditRepository.findByCustomerIdAndType(customerId, type)</span>
+<span class="fc" id="L45">                        .hasElement()</span>
+<span class="fc" id="L46">                        .flatMap(exists -&gt; {</span>
+<span class="pc bpc" id="L47" title="1 of 4 branches missed.">                            if (TYPE_PERSONAL.equals(type) &amp;&amp; Boolean.TRUE.equals(exists)) {</span>
+<span class="fc" id="L48">                                return Mono.error(new CreditConflictException(</span>
+                                        &quot;Customer already has a PERSONAL credit&quot;));
+                            }
+<span class="fc" id="L51">                            return Mono.just(false);</span>
+                        })
+<span class="fc" id="L53">                        .then(Mono.defer(() -&gt; {</span>
+<span class="fc" id="L54">                            var doc = creditMapper.toNewDocument(customerId, type, amount,</span>
+<span class="fc" id="L55">                                    currency, termMonths);</span>
+<span class="fc" id="L56">                            return creditRepository.save(doc)</span>
+<span class="fc" id="L57">                                    .flatMap(saved -&gt; eventPublisher.publish(CreditEvent.builder()</span>
+<span class="fc" id="L58">                                            .eventType(CreditEvent.CREATED)</span>
+<span class="fc" id="L59">                                            .creditId(saved.getId())</span>
+<span class="fc" id="L60">                                            .customerId(saved.getCustomerId())</span>
+<span class="fc" id="L61">                                            .status(saved.getStatus())</span>
+<span class="fc" id="L62">                                            .balance(saved.getBalance().toPlainString())</span>
+<span class="fc" id="L63">                                            .currency(saved.getCurrency())</span>
+<span class="fc" id="L64">                                            .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))</span>
+<span class="fc" id="L65">                                            .correlationId(correlationId)</span>
+<span class="fc" id="L66">                                            .build())</span>
+<span class="fc" id="L67">                                            .thenReturn(saved))</span>
+<span class="fc" id="L68">                                    .map(creditMapper::toResponse);</span>
+                        })));
+    }
+
+    @Override
+    public Flux&lt;CreditDocument&gt; findAll(int page, int size) {
+<span class="nc" id="L74">        return creditRepository.findAll()</span>
+<span class="nc" id="L75">                .skip((long) page * size)</span>
+<span class="nc" id="L76">                .take(size);</span>
+    }
+
+    @Override
+    public Mono&lt;CreditDocument&gt; findById(UUID creditId) {
+<span class="fc" id="L81">        return creditRepository.findById(creditId)</span>
+<span class="fc" id="L82">                .switchIfEmpty(Mono.error(new CreditNotFoundException(</span>
+                        &quot;Credit not found: &quot; + creditId)));
+    }
+
+    @Override
+    public Mono&lt;CreditDocument&gt; update(UUID creditId, com.banking.credit.dto.CreditUpdateRequest request,
+                                       String correlationId) {
+<span class="fc" id="L89">        return findById(creditId)</span>
+<span class="fc" id="L90">                .flatMap(doc -&gt; {</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">                    var newStatus = request.getStatus() == null ? null : request.getStatus().getValue();</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                    if (newStatus == null) {</span>
+<span class="nc" id="L93">                        return Mono.just(doc);</span>
+                    }
+                    // No se permite PAID por PATCH si balance &gt; 0 (regla de negocio).
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">                    if (CreditDocument.STATUS_PAID.equals(newStatus)</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                            &amp;&amp; doc.getBalance().compareTo(BigDecimal.ZERO) &gt; 0) {</span>
+<span class="fc" id="L98">                        return Mono.error(new CreditConflictException(</span>
+                                &quot;Cannot set PAID while balance is greater than zero&quot;));
+                    }
+<span class="fc" id="L101">                    doc.setStatus(newStatus);</span>
+<span class="fc" id="L102">                    doc.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime());</span>
+<span class="fc" id="L103">                    return creditRepository.save(doc)</span>
+<span class="fc" id="L104">                            .flatMap(saved -&gt; eventPublisher.publish(CreditEvent.builder()</span>
+<span class="fc" id="L105">                                    .eventType(CreditEvent.UPDATED)</span>
+<span class="fc" id="L106">                                    .creditId(saved.getId())</span>
+<span class="fc" id="L107">                                    .customerId(saved.getCustomerId())</span>
+<span class="fc" id="L108">                                    .status(saved.getStatus())</span>
+<span class="fc" id="L109">                                    .balance(saved.getBalance().toPlainString())</span>
+<span class="fc" id="L110">                                    .currency(saved.getCurrency())</span>
+<span class="fc" id="L111">                                    .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))</span>
+<span class="fc" id="L112">                                    .correlationId(correlationId)</span>
+<span class="fc" id="L113">                                    .build())</span>
+<span class="fc" id="L114">                                    .thenReturn(saved));</span>
+                });
+    }
+
+    @Override
+    public Mono&lt;Void&gt; deactivate(UUID creditId, String correlationId) {
+<span class="fc" id="L120">        return findById(creditId)</span>
+<span class="fc" id="L121">                .flatMap(doc -&gt; {</span>
+<span class="fc" id="L122">                    doc.setStatus(CreditDocument.STATUS_CANCELLED);</span>
+<span class="fc" id="L123">                    doc.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime());</span>
+<span class="fc" id="L124">                    return creditRepository.save(doc)</span>
+<span class="fc" id="L125">                            .flatMap(saved -&gt; eventPublisher.publish(CreditEvent.builder()</span>
+<span class="fc" id="L126">                                    .eventType(CreditEvent.CANCELLED)</span>
+<span class="fc" id="L127">                                    .creditId(saved.getId())</span>
+<span class="fc" id="L128">                                    .customerId(saved.getCustomerId())</span>
+<span class="fc" id="L129">                                    .status(saved.getStatus())</span>
+<span class="fc" id="L130">                                    .balance(saved.getBalance().toPlainString())</span>
+<span class="fc" id="L131">                                    .currency(saved.getCurrency())</span>
+<span class="fc" id="L132">                                    .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))</span>
+<span class="fc" id="L133">                                    .correlationId(correlationId)</span>
+<span class="fc" id="L134">                                    .build())</span>
+<span class="fc" id="L135">                                    .thenReturn(saved));</span>
+                })
+<span class="fc" id="L137">                .then();</span>
+    }
+
+    @Override
+    public Mono&lt;OverdueInfo&gt; getOverdueInfo(UUID creditId) {
+<span class="fc" id="L142">        return findById(creditId)</span>
+<span class="fc" id="L143">                .map(doc -&gt; {</span>
+<span class="pc bpc" id="L144" title="1 of 4 branches missed.">                    if (doc.getDueDate() == null || doc.getBalance().compareTo(BigDecimal.ZERO) &lt;= 0) {</span>
+<span class="fc" id="L145">                        return new OverdueInfo(false, BigDecimal.ZERO, 0L);</span>
+                    }
+<span class="fc" id="L147">                    long days = ChronoUnit.DAYS.between(doc.getDueDate(),</span>
+<span class="fc" id="L148">                            OffsetDateTime.now(ZoneOffset.UTC).toLocalDate());</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">                    if (days &lt;= 0) {</span>
+<span class="nc" id="L150">                        return new OverdueInfo(false, BigDecimal.ZERO, 0L);</span>
+                    }
+<span class="fc" id="L152">                    return new OverdueInfo(true, doc.getBalance(), days);</span>
+                });
+    }
+
+    private Mono&lt;Void&gt; validateType(String type) {
+<span class="pc bpc" id="L157" title="1 of 4 branches missed.">        if (!TYPE_PERSONAL.equals(type) &amp;&amp; !TYPE_BUSINESS.equals(type)) {</span>
+<span class="nc" id="L158">            return Mono.error(new CreditConflictException(&quot;Invalid credit type: &quot; + type));</span>
+        }
+<span class="fc" id="L160">        return Mono.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

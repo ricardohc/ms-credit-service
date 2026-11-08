@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PaymentServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ms-credit-service</a> &gt; <a href="index.source.html" class="el_package">com.banking.credit.service.impl</a> &gt; <span class="el_source">PaymentServiceImpl.java</span></div><h1>PaymentServiceImpl.java</h1><pre class="source lang-java linenums">package com.banking.credit.service.impl;
+
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.exception.CreditNotFoundException;
+import com.banking.credit.exception.PaymentExceedsBalanceException;
+import com.banking.credit.exception.TransactionServiceException;
+import com.banking.credit.repository.CreditRepository;
+import com.banking.credit.dto.OperationAcceptedResponse;
+import com.banking.credit.service.PaymentService;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+/**
+ * Fachada de pagos: delega la operacion en ms-transaction-service.
+ * - Registra idempotencia por X-Transaction-ID (repeticion no genera doble efecto).
+ * - Timeout de Resilience4j (2 s) aplicado en la llamada saliente.
+ * - El saldo/estado del credito se actualiza por el flujo de eventos/transaction-service,
+ *   sin escrituras cruzadas a otras bases.
+ */
+<span class="nc" id="L31">@Slf4j</span>
+@Service
+<span class="nc" id="L33">@RequiredArgsConstructor</span>
+public class PaymentServiceImpl implements PaymentService {
+
+    private final CreditRepository creditRepository;
+    private final WebClient transactionWebClient;
+
+    @Value(&quot;${transaction-service.base-url:http://ms-transaction-service}&quot;)
+    private String baseUrl;
+
+    /** Registro de idempotencia en memoria por transaccion (transactionId -&gt; respuesta). */
+<span class="nc" id="L43">    private final Map&lt;UUID, OperationAcceptedResponse&gt; idempotencyRegistry = new HashMap&lt;&gt;();</span>
+
+    @Override
+    public Mono&lt;OperationAcceptedResponse&gt; pay(UUID creditId, UUID transactionId,
+                                               BigDecimal amount, String currency,
+                                               UUID sourceAccountId, UUID payerCustomerId,
+                                               String correlationId) {
+        // 1) Idempotencia: mismo X-Transaction-ID retorna la transaccion original.
+<span class="nc" id="L51">        synchronized (idempotencyRegistry) {</span>
+<span class="nc" id="L52">            var previous = idempotencyRegistry.get(transactionId);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            if (previous != null) {</span>
+<span class="nc" id="L54">                log.info(&quot;Idempotent replay for transactionId={}&quot;, transactionId);</span>
+<span class="nc" id="L55">                return Mono.just(previous);</span>
+            }
+<span class="nc" id="L57">        }</span>
+
+        // 2) Validar credito y deuda pendiente.
+<span class="nc" id="L60">        return creditRepository.findById(creditId)</span>
+<span class="nc" id="L61">                .switchIfEmpty(Mono.error(new CreditNotFoundException(</span>
+                        &quot;Credit not found: &quot; + creditId)))
+<span class="nc" id="L63">                .flatMap(credit -&gt; validate(credit, amount, currency))</span>
+<span class="nc" id="L64">                .flatMap(credit -&gt; callTransactionService(creditId, transactionId, amount,</span>
+                        currency, sourceAccountId, payerCustomerId, correlationId));
+    }
+
+    private Mono&lt;CreditDocument&gt; validate(CreditDocument credit, BigDecimal amount, String currency) {
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (!currency.equals(credit.getCurrency())) {</span>
+<span class="nc" id="L70">            return Mono.error(new PaymentExceedsBalanceException(</span>
+                    &quot;Payment currency &quot; + currency + &quot; does not match credit currency &quot;
+<span class="nc" id="L72">                            + credit.getCurrency()));</span>
+        }
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (amount.compareTo(credit.getBalance()) &gt; 0) {</span>
+<span class="nc" id="L75">            return Mono.error(new PaymentExceedsBalanceException(</span>
+                    &quot;Payment &quot; + amount + &quot; exceeds outstanding balance &quot;
+<span class="nc" id="L77">                            + credit.getBalance()));</span>
+        }
+<span class="nc" id="L79">        return Mono.just(credit);</span>
+    }
+
+    private Mono&lt;OperationAcceptedResponse&gt; callTransactionService(
+            UUID creditId, UUID transactionId, BigDecimal amount, String currency,
+            UUID sourceAccountId, UUID payerCustomerId, String correlationId) {
+
+<span class="nc" id="L86">        Map&lt;String, Object&gt; payload = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L87">        payload.put(&quot;creditId&quot;, creditId);</span>
+<span class="nc" id="L88">        payload.put(&quot;transactionId&quot;, transactionId);</span>
+<span class="nc" id="L89">        payload.put(&quot;amount&quot;, amount.toPlainString());</span>
+<span class="nc" id="L90">        payload.put(&quot;currency&quot;, currency);</span>
+<span class="nc" id="L91">        payload.put(&quot;sourceAccountId&quot;, sourceAccountId);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (payerCustomerId != null) {</span>
+<span class="nc" id="L93">            payload.put(&quot;payerCustomerId&quot;, payerCustomerId);</span>
+        }
+
+<span class="nc" id="L96">        return transactionWebClient.post()</span>
+<span class="nc" id="L97">                .uri(&quot;/api/v1/transactions/credits/payments&quot;)</span>
+<span class="nc" id="L98">                .header(&quot;X-Correlation-ID&quot;, correlationId)</span>
+<span class="nc" id="L99">                .header(&quot;X-Transaction-ID&quot;, transactionId.toString())</span>
+<span class="nc" id="L100">                .contentType(MediaType.APPLICATION_JSON)</span>
+<span class="nc" id="L101">                .bodyValue(payload)</span>
+<span class="nc" id="L102">                .retrieve()</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                .onStatus(status -&gt; status.value() &gt;= 400, response -&gt;</span>
+<span class="nc" id="L104">                        response.bodyToMono(String.class)</span>
+<span class="nc" id="L105">                                .defaultIfEmpty(&quot;&quot;)</span>
+<span class="nc" id="L106">                                .flatMap(body -&gt; Mono.error(new TransactionServiceException(</span>
+                                        &quot;Transaction service rejected payment: &quot;
+<span class="nc" id="L108">                                                + response.statusCode() + &quot; &quot; + body))))</span>
+<span class="nc" id="L109">                .bodyToMono(OperationAcceptedResponse.class)</span>
+<span class="nc" id="L110">                .timeout(java.time.Duration.ofSeconds(2))</span>
+<span class="nc" id="L111">                .doOnNext(resp -&gt; {</span>
+<span class="nc" id="L112">                    synchronized (idempotencyRegistry) {</span>
+<span class="nc" id="L113">                        idempotencyRegistry.put(transactionId, resp);</span>
+<span class="nc" id="L114">                    }</span>
+<span class="nc" id="L115">                    log.info(&quot;Payment delegated for credit {} [transactionId={}, status={}]&quot;,</span>
+<span class="nc" id="L116">                            creditId, transactionId, resp.getStatus());</span>
+<span class="nc" id="L117">                })</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                .onErrorMap(err -&gt; err instanceof TransactionServiceException ? err</span>
+<span class="nc" id="L119">                        : new TransactionServiceException(</span>
+<span class="nc" id="L120">                        &quot;Failed to reach transaction service: &quot; + err.getMessage()));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
