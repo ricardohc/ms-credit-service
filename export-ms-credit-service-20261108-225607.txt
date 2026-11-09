@@ -1,0 +1,1662 @@
+=== pom.xml ===
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.13</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.banking</groupId>
+  <artifactId>ms-credit-service</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>ms-credit-service</name>
+  <description>Microservicio credit</description>
+
+  <properties>
+    <java.version>17</java.version>
+    <spring-cloud.version>2023.0.3</spring-cloud.version>
+    <lombok.version>1.18.32</lombok.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <springdoc.version>2.5.0</springdoc.version>
+    <openapi-generator.version>7.6.0</openapi-generator.version>
+    <rxjava.version>3.1.8</rxjava.version>
+    <reactor-adapter.version>3.6.0</reactor-adapter.version>
+    <resilience4j.version>2.2.0</resilience4j.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor.kafka</groupId>
+      <artifactId>reactor-kafka</artifactId>
+      <version>1.3.23</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.reactivex.rxjava3</groupId>
+      <artifactId>rxjava</artifactId>
+      <version>${rxjava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor.addons</groupId>
+      <artifactId>reactor-adapter</artifactId>
+      <version>${reactor-adapter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-spring-boot3</artifactId>
+      <version>${resilience4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+      <version>${springdoc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>de.flapdoodle.embed</groupId>
+      <artifactId>de.flapdoodle.embed.mongo</artifactId>
+      <version>4.12.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openapitools</groupId>
+      <artifactId>jackson-databind-nullable</artifactId>
+      <version>0.2.6</version>
+    </dependency>
+  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>17</source>
+          <target>17</target>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <configLocation>google_checks.xml</configLocation>
+          <consoleOutput>true</consoleOutput>
+          <failsOnError>true</failsOnError>
+        </configuration>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <goals><goal>check</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution><goals><goal>prepare-agent</goal></goals></execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>${openapi-generator.version}</version>
+        <executions>
+          <execution>
+            <id>generate-api</id>
+            <goals><goal>generate</goal></goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/openapi/ms-credit-service-openapi.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <apiPackage>com.banking.credit.api</apiPackage>
+              <modelPackage>com.banking.credit.dto</modelPackage>
+              <configOptions>
+                <interfaceOnly>true</interfaceOnly>
+                <useTags>true</useTags>
+                <reactive>true</reactive>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useJakartaEe>true</useJakartaEe>
+                <dateLibrary>java8</dateLibrary>
+                <useSwaggerAnnotations>false</useSwaggerAnnotations>
+                <skipDefaultInterface>true</skipDefaultInterface>
+                <includeHttpRequestContext>false</includeHttpRequestContext>
+              </configOptions>
+              <generateSupportingFiles>false</generateSupportingFiles>
+              <generateApiTests>false</generateApiTests>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
+=== src/main/java/com/banking/credit/CreditServiceApplication.java ===
+package com.banking.credit;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class CreditServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(CreditServiceApplication.class, args);
+    }
+}
+
+=== src/main/java/com/banking/credit/config/SecurityConfig.java ===
+package com.banking.credit.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+
+/**
+ * Seguridad del microservicio.
+ * Si spring.security.dev-mode=true (default en desarrollo): permitAll().
+ * Si false (produccion): OAuth2 Resource Server con JWT.
+ */
+@Configuration
+@EnableWebFluxSecurity
+public class SecurityConfig {
+
+    @Value("${spring.security.dev-mode:false}")
+    private boolean devMode;
+
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+        if (devMode) {
+            return http
+                    .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                    .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
+                    .build();
+        }
+        return http
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(exchanges -> exchanges.anyExchange().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> { }))
+                .build();
+    }
+}
+=== src/main/java/com/banking/credit/config/WebClientConfig.java ===
+package com.banking.credit.config;
+
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
+
+/**
+ * WebClient hacia ms-transaction-service con timeout de 2 segundos
+ * (regla transversal de Resilience4j / timeouts inter-servicios).
+ */
+@Configuration
+public class WebClientConfig {
+
+    @Bean
+    public WebClient transactionWebClient(
+            @Value("${transaction-service.base-url:http://ms-transaction-service}") String baseUrl) {
+        var httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 2000)
+                .responseTimeout(Duration.ofSeconds(2))
+                .doOnConnected(conn -> conn.addHandlerLast(
+                        new ReadTimeoutHandler(2, TimeUnit.SECONDS)));
+        return WebClient.builder()
+                .baseUrl(baseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+}
+
+=== src/main/java/com/banking/credit/controller/CreditApiImpl.java ===
+package com.banking.credit.controller;
+
+import com.banking.credit.api.CreditApi;
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.dto.CreditCreateRequest;
+import com.banking.credit.dto.CreditPage;
+import com.banking.credit.dto.CreditPaymentRequest;
+import com.banking.credit.dto.CreditResponse;
+import com.banking.credit.dto.CreditStatus;
+import com.banking.credit.dto.CreditUpdateRequest;
+import com.banking.credit.dto.OperationAcceptedResponse;
+import com.banking.credit.dto.OverdueStatusResponse;
+import com.banking.credit.mapper.CreditMapper;
+import com.banking.credit.service.CreditService;
+import com.banking.credit.service.PaymentService;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+/**
+ * Implementacion del contrato generado (com.banking.credit.api.CreditApi).
+ * Reactivo: nunca block() en el camino.
+ */
+@RestController
+@RequiredArgsConstructor
+public class CreditApiImpl implements CreditApi {
+
+    private final CreditService creditService;
+    private final PaymentService paymentService;
+    private final CreditMapper creditMapper;
+
+    @Override
+    public Mono<ResponseEntity<CreditPage>> findAllCredits(String xCorrelationID, String xChannelID,
+                                                           Integer page, Integer size,
+                                                           ServerWebExchange exchange) {
+        return creditService.findAll(page, size)
+                .map(creditMapper::toResponse)
+                .collectList()
+                .map(items -> {
+                    var p = new CreditPage();
+                    p.setContent(items);
+                    p.setPage(page);
+                    p.setSize(size);
+                    p.setTotalElements(items.size());
+                    return ResponseEntity.ok(p);
+                });
+    }
+
+    @Override
+    public Mono<ResponseEntity<CreditResponse>> createCredit(String xCorrelationID, String xChannelID,
+                                                             UUID xTransactionID,
+                                                             Mono<CreditCreateRequest> body,
+                                                             ServerWebExchange exchange) {
+        return body.flatMap(req -> creditService.create(req.getCustomerId(),
+                        req.getType().getValue(), new BigDecimal(req.getAmount()),
+                        req.getCurrency(), req.getTermMonths(), xCorrelationID))
+                .map(resp -> ResponseEntity.status(HttpStatus.CREATED).body(resp));
+    }
+
+    @Override
+    public Mono<ResponseEntity<CreditResponse>> findCreditById(UUID creditId, String xCorrelationID,
+                                                               String xChannelID,
+                                                               ServerWebExchange exchange) {
+        return creditService.findById(creditId)
+                .map(creditMapper::toResponse)
+                .map(ResponseEntity::ok);
+    }
+
+    @Override
+    public Mono<ResponseEntity<CreditResponse>> updateCredit(UUID creditId, String xCorrelationID,
+                                                             String xChannelID, UUID xTransactionID,
+                                                             Mono<CreditUpdateRequest> body,
+                                                             ServerWebExchange exchange) {
+        return body.flatMap(req -> creditService.update(creditId, req, xCorrelationID))
+                .map(creditMapper::toResponse)
+                .map(ResponseEntity::ok);
+    }
+
+    @Override
+    public Mono<ResponseEntity<Void>> deactivateCredit(UUID creditId, String xCorrelationID,
+                                                       String xChannelID, UUID xTransactionID,
+                                                       ServerWebExchange exchange) {
+        return creditService.deactivate(creditId, xCorrelationID)
+                .thenReturn(ResponseEntity.noContent().<Void>build());
+    }
+
+    @Override
+    public Mono<ResponseEntity<OperationAcceptedResponse>> createCreditPayment(
+            UUID creditId, String xCorrelationID, String xChannelID, UUID xTransactionID,
+            Mono<CreditPaymentRequest> body, ServerWebExchange exchange) {
+        return body.flatMap(req -> paymentService.pay(creditId, xTransactionID,
+                        new BigDecimal(req.getAmount()), req.getCurrency(),
+                        req.getSourceAccountId(), req.getPayerCustomerId(), xCorrelationID))
+                .map(resp -> ResponseEntity.status(HttpStatus.ACCEPTED).body(resp));
+    }
+
+    @Override
+    public Mono<ResponseEntity<OverdueStatusResponse>> getOverdueStatus(
+            UUID creditId, String xCorrelationID, String xChannelID,
+            ServerWebExchange exchange) {
+        return creditService.getOverdueInfo(creditId)
+                .map(info -> {
+                    var r = new OverdueStatusResponse();
+                    r.setCreditId(creditId);
+                    r.setHasOverdueDebt(info.hasOverdueDebt());
+                    r.setOverdueAmount(info.overdueAmount().toPlainString());
+                    r.setDaysOverdue((int) info.daysOverdue());
+                    return ResponseEntity.ok(r);
+                });
+    }
+}
+
+=== src/main/java/com/banking/credit/document/CreditDocument.java ===
+package com.banking.credit.document;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+/**
+ * Persistencia MongoDB separada de los DTOs de contrato (common-rules.md).
+ * Dinero con BigDecimal, fechas en UTC.
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "credits")
+@CompoundIndex(name = "ux_customer_type", def = "{'customerId': 1, 'type': 1}", unique = false)
+public class CreditDocument {
+
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_PAID = "PAID";
+    public static final String STATUS_OVERDUE = "OVERDUE";
+    public static final String STATUS_CANCELLED = "CANCELLED";
+
+    @Id
+    private UUID id;
+
+    @Field("customerId")
+    private UUID customerId;
+
+    /** PERSONAL | BUSINESS */
+    @Field("type")
+    private String type;
+
+    /** ACTIVE | PAID | OVERDUE | CANCELLED */
+    @Field("status")
+    private String status;
+
+    @Field("amount")
+    private BigDecimal amount;
+
+    @Field("balance")
+    private BigDecimal balance;
+
+    @Field("currency")
+    private String currency;
+
+    @Field("termMonths")
+    private Integer termMonths;
+
+    @Field("dueDate")
+    private LocalDate dueDate;
+
+    @Field("createdAt")
+    private LocalDateTime createdAt;
+
+    @Field("updatedAt")
+    private LocalDateTime updatedAt;
+
+    /** Control de concurrencia. */
+    @Version
+    private Long version;
+}
+
+=== src/main/java/com/banking/credit/event/CreditEvent.java ===
+package com.banking.credit.event;
+
+import java.time.OffsetDateTime;
+import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * Evento de dominio publicado en el topico banking.credit.events.v1 (Parte III).
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CreditEvent {
+
+    public static final String CREATED = "CreditCreated";
+    public static final String UPDATED = "CreditUpdated";
+    public static final String CANCELLED = "CreditCancelled";
+    public static final String PAYMENT_APPLIED = "CreditPaymentApplied";
+    public static final String OVERDUE_STATUS_CHANGED = "CreditOverdueStatusChanged";
+
+    private String eventType;
+    private UUID creditId;
+    private UUID customerId;
+    private String status;
+    private String balance;
+    private String currency;
+    private Boolean hasOverdueDebt;
+    private OffsetDateTime occurredAt;
+    private String correlationId;
+}
+
+=== src/main/java/com/banking/credit/event/CreditEventPublisher.java ===
+package com.banking.credit.event;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+
+/**
+ * Productor de eventos de dominio hacia el topico banking.credit.events.v1.
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class CreditEventPublisher {
+
+    public static final String TOPIC = "banking.credit.events.v1";
+
+    private final ReactiveKafkaProducerTemplate<String, CreditEvent> kafkaTemplate;
+
+    public Mono<Void> publish(CreditEvent event) {
+        return kafkaTemplate.send(TOPIC, event.getCreditId().toString(), event)
+                .doOnSuccess(result -> log.info(
+                        "Event {} published for credit {} [correlationId={}]",
+                        event.getEventType(), event.getCreditId(), event.getCorrelationId()))
+                .doOnError(err -> log.error(
+                        "Failed to publish event {} for credit {}: {}",
+                        event.getEventType(), event.getCreditId(), err.getMessage()))
+                .onErrorResume(err -> Mono.empty())
+                .then();
+    }
+}
+
+=== src/main/java/com/banking/credit/event/KafkaConfig.java ===
+package com.banking.credit.event;
+
+import com.banking.credit.service.impl.PaymentServiceImpl;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
+import org.springframework.kafka.support.serializer.JsonSerializer;
+import reactor.kafka.sender.SenderOptions;
+
+/**
+ * Productor reactivo de Kafka para banking.credit.events.v1.
+ */
+@Configuration
+public class KafkaConfig {
+
+    @Bean
+    public ReactiveKafkaProducerTemplate<String, CreditEvent> reactiveKafkaProducerTemplate(
+            KafkaProperties kafkaProperties,
+            @Value("${spring.kafka.bootstrap-servers:localhost:9092}") String bootstrapServers) {
+        Map<String, Object> props = new HashMap<>(kafkaProperties.buildProducerProperties());
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        props.put(ProducerConfig.ACKS_CONFIG, "all");
+        return new ReactiveKafkaProducerTemplate<>(SenderOptions.create(props));
+    }
+}
+
+=== src/main/java/com/banking/credit/exception/CreditConflictException.java ===
+package com.banking.credit.exception;
+
+/** Regla de negocio violada (ej. segundo credito PERSONAL) -> 409. */
+public class CreditConflictException extends DomainException {
+
+    public CreditConflictException(String message) {
+        super("CREDIT_CONFLICT", message);
+    }
+}
+
+=== src/main/java/com/banking/credit/exception/CreditNotFoundException.java ===
+package com.banking.credit.exception;
+
+/** Recurso no encontrado -> 404. */
+public class CreditNotFoundException extends DomainException {
+
+    public CreditNotFoundException(String message) {
+        super("CREDIT_NOT_FOUND", message);
+    }
+}
+
+=== src/main/java/com/banking/credit/exception/DomainException.java ===
+package com.banking.credit.exception;
+
+/**
+ * Excepcion base de dominio del servicio de creditos.
+ */
+public abstract class DomainException extends RuntimeException {
+
+    private final String code;
+
+    protected DomainException(String code, String message) {
+        super(message);
+        this.code = code;
+    }
+
+    public String getCode() {
+        return code;
+    }
+}
+
+=== src/main/java/com/banking/credit/exception/GlobalExceptionHandler.java ===
+package com.banking.credit.exception;
+
+import com.banking.credit.dto.ErrorResponse;
+import java.time.OffsetDateTime;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.web.WebProperties;
+import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
+import org.springframework.boot.web.error.ErrorAttributeOptions;
+import org.springframework.boot.web.reactive.error.ErrorAttributes;
+import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.reactive.function.server.RequestPredicates;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+/**
+ * Manejo de errores comun con estructura ErrorResponse del contrato.
+ */
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    private static ErrorResponse build(String code, String message, String correlationId,
+                                       java.util.List<String> details) {
+        var e = new ErrorResponse();
+        e.setCode(code);
+        e.setMessage(message);
+        e.setTimestamp(OffsetDateTime.now());
+        e.setCorrelationId(correlationId);
+        e.setDetails(details);
+        return e;
+    }
+
+    private static String correlation(ServerWebExchange exchange) {
+        var v = exchange.getRequest().getHeaders().getFirst("X-Correlation-ID");
+        return v == null ? "" : v;
+    }
+
+    @ExceptionHandler(CreditNotFoundException.class)
+    public Mono<ResponseEntity<ErrorResponse>> notFound(CreditNotFoundException ex,
+                                                        ServerWebExchange exchange) {
+        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(build(ex.getCode(), ex.getMessage(), correlation(exchange), null)));
+    }
+
+    @ExceptionHandler(CreditConflictException.class)
+    public Mono<ResponseEntity<ErrorResponse>> conflict(CreditConflictException ex,
+                                                        ServerWebExchange exchange) {
+        return Mono.just(ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(build(ex.getCode(), ex.getMessage(), correlation(exchange), null)));
+    }
+
+    @ExceptionHandler(PaymentExceedsBalanceException.class)
+    public Mono<ResponseEntity<ErrorResponse>> unprocessable(PaymentExceedsBalanceException ex,
+                                                             ServerWebExchange exchange) {
+        return Mono.just(ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(build(ex.getCode(), ex.getMessage(), correlation(exchange), null)));
+    }
+
+    @ExceptionHandler(TransactionServiceException.class)
+    public Mono<ResponseEntity<ErrorResponse>> transactionError(TransactionServiceException ex,
+                                                                ServerWebExchange exchange) {
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(build(ex.getCode(), ex.getMessage(), correlation(exchange), null)));
+    }
+
+    @ExceptionHandler(WebExchangeBindException.class)
+    public Mono<ResponseEntity<ErrorResponse>> badRequest(WebExchangeBindException ex,
+                                                          ServerWebExchange exchange) {
+        var details = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .toList();
+        return Mono.just(ResponseEntity.badRequest()
+                .body(build("BAD_REQUEST", "Invalid request", correlation(exchange), details)));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public Mono<ResponseEntity<ErrorResponse>> generic(Exception ex, ServerWebExchange exchange) {
+        log.error("Unhandled error", ex);
+        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(build("INTERNAL_ERROR", "Internal server error", correlation(exchange), null)));
+    }
+}
+
+=== src/main/java/com/banking/credit/exception/PaymentExceedsBalanceException.java ===
+package com.banking.credit.exception;
+
+/** Pago mayor que la deuda pendiente (no hay saldo a favor) -> 422. */
+public class PaymentExceedsBalanceException extends DomainException {
+
+    public PaymentExceedsBalanceException(String message) {
+        super("PAYMENT_EXCEEDS_BALANCE", message);
+    }
+}
+
+=== src/main/java/com/banking/credit/exception/TransactionServiceException.java ===
+package com.banking.credit.exception;
+
+/** Error al invocar a ms-transaction-service -> 502/500 segun contrato mapeado a 500. */
+public class TransactionServiceException extends DomainException {
+
+    public TransactionServiceException(String message) {
+        super("TRANSACTION_SERVICE_ERROR", message);
+    }
+}
+
+=== src/main/java/com/banking/credit/mapper/CreditMapper.java ===
+package com.banking.credit.mapper;
+
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.dto.CreditResponse;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.UUID;
+import org.springframework.stereotype.Component;
+
+/**
+ * Mappea entre el documento MongoDB y el DTO de contrato.
+ */
+@Component
+public class CreditMapper {
+
+    public CreditDocument toNewDocument(UUID customerId, String type, BigDecimal amount,
+                                        String currency, int termMonths) {
+        var now = OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime();
+        return CreditDocument.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .type(type)
+                .status(CreditDocument.STATUS_ACTIVE)
+                .amount(amount)
+                .balance(amount)
+                .currency(currency)
+                .termMonths(termMonths)
+                .dueDate(OffsetDateTime.now(ZoneOffset.UTC).toLocalDate().plusMonths(termMonths))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+    }
+
+    public CreditResponse toResponse(CreditDocument doc) {
+        var r = new CreditResponse();
+        r.setId(doc.getId());
+        r.setCustomerId(doc.getCustomerId());
+        r.setType(com.banking.credit.dto.CreditType.fromValue(doc.getType()));
+        r.setStatus(com.banking.credit.dto.CreditStatus.fromValue(doc.getStatus()));
+        r.setAmount(doc.getAmount().toPlainString());
+        r.setBalance(doc.getBalance().toPlainString());
+        r.setCurrency(doc.getCurrency());
+        r.setDueDate(doc.getDueDate());
+        r.setCreatedAt(doc.getCreatedAt() == null ? null
+                : doc.getCreatedAt().atOffset(ZoneOffset.UTC));
+        return r;
+    }
+}
+
+=== src/main/java/com/banking/credit/repository/CreditRepository.java ===
+package com.banking.credit.repository;
+
+import com.banking.credit.document.CreditDocument;
+import java.util.UUID;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Mono;
+
+/**
+ * Repositorio de escritura directa a MongoDB (banking_credit.credits).
+ */
+@Repository
+public interface CreditRepository extends ReactiveMongoRepository<CreditDocument, UUID> {
+
+    // Devuelve true si existe al menos un crédito con ese cliente y tipo.
+    // Es la forma más segura y eficiente de validar sin traer múltiples documentos.
+    Mono<Boolean> existsByCustomerIdAndType(UUID customerId, String type);
+}
+=== src/main/java/com/banking/credit/service/CreditService.java ===
+package com.banking.credit.service;
+
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.dto.CreditResponse;
+import com.banking.credit.dto.CreditUpdateRequest;
+import java.math.BigDecimal;
+import java.util.UUID;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/**
+ * Reglas de negocio de creditos (skill-credit.md).
+ */
+public interface CreditService {
+
+    Mono<CreditResponse> create(UUID customerId, String type, BigDecimal amount,
+                                String currency, Integer termMonths, String correlationId);
+
+    Flux<CreditDocument> findAll(int page, int size);
+
+    Mono<CreditDocument> findById(UUID creditId);
+
+    Mono<CreditDocument> update(UUID creditId, CreditUpdateRequest request, String correlationId);
+
+    Mono<Void> deactivate(UUID creditId, String correlationId);
+
+    Mono<OverdueInfo> getOverdueInfo(UUID creditId);
+
+    /** Informacion de deuda vencida para el endpoint /overdue-status y validaciones. */
+    record OverdueInfo(boolean hasOverdueDebt, BigDecimal overdueAmount, long daysOverdue) {
+    }
+}
+
+=== src/main/java/com/banking/credit/service/PaymentService.java ===
+package com.banking.credit.service;
+
+import com.banking.credit.dto.OperationAcceptedResponse;
+import java.util.UUID;
+import reactor.core.publisher.Mono;
+
+/**
+ * Fachada de pagos: delega en ms-transaction-service (skill-credit.md).
+ * Idempotente por X-Transaction-ID.
+ */
+public interface PaymentService {
+
+    Mono<OperationAcceptedResponse> pay(UUID creditId, UUID transactionId,
+                                        java.math.BigDecimal amount, String currency,
+                                        UUID sourceAccountId, UUID payerCustomerId,
+                                        String correlationId);
+}
+
+=== src/main/java/com/banking/credit/service/impl/CreditServiceImpl.java ===
+package com.banking.credit.service.impl;
+
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.event.CreditEvent;
+import com.banking.credit.dto.CreditResponse;
+import com.banking.credit.event.CreditEventPublisher;
+import com.banking.credit.exception.CreditConflictException;
+import com.banking.credit.exception.CreditNotFoundException;
+import com.banking.credit.mapper.CreditMapper;
+import com.banking.credit.repository.CreditRepository;
+import com.banking.credit.service.CreditService;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/**
+ * Implementacion reactiva (Mono/Flux) de las reglas de negocio de creditos.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CreditServiceImpl implements CreditService {
+
+    public static final String TYPE_PERSONAL = "PERSONAL";
+    public static final String TYPE_BUSINESS = "BUSINESS";
+
+    private final CreditRepository creditRepository;
+    private final CreditMapper creditMapper;
+    private final CreditEventPublisher eventPublisher;
+
+    @Override
+    public Mono<CreditResponse> create(UUID customerId, String type, BigDecimal amount,
+                                       String currency, Integer termMonths, String correlationId) {
+        return validateType(type)
+                // Consultamos de forma segura (solo un booleano) si ya existe
+                .then(creditRepository.existsByCustomerIdAndType(customerId, type))
+                .flatMap(exists -> {
+                    // Regla de Negocio: Bloquear solo si es PERSONAL y ya tiene uno
+                    if (TYPE_PERSONAL.equals(type) && Boolean.TRUE.equals(exists)) {
+                        return Mono.error(new CreditConflictException(
+                                "Customer already has a PERSONAL credit"));
+                    }
+                    // Si es BUSINESS, ignoramos si existe y permitimos crear otro
+                    var doc = creditMapper.toNewDocument(customerId, type, amount, currency, termMonths);
+                    return creditRepository.save(doc);
+                })
+                .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
+                                .eventType(CreditEvent.CREATED)
+                                .creditId(saved.getId())
+                                .customerId(saved.getCustomerId())
+                                .status(saved.getStatus())
+                                .balance(saved.getBalance().toPlainString())
+                                .currency(saved.getCurrency())
+                                .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
+                                .correlationId(correlationId)
+                                .build())
+                        .thenReturn(saved))
+                .map(creditMapper::toResponse);
+    }
+
+    @Override
+    public Flux<CreditDocument> findAll(int page, int size) {
+        return creditRepository.findAll()
+                .skip((long) page * size)
+                .take(size);
+    }
+
+    @Override
+    public Mono<CreditDocument> findById(UUID creditId) {
+        return creditRepository.findById(creditId)
+                .switchIfEmpty(Mono.error(new CreditNotFoundException(
+                        "Credit not found: " + creditId)));
+    }
+
+    @Override
+    public Mono<CreditDocument> update(UUID creditId, com.banking.credit.dto.CreditUpdateRequest request,
+                                       String correlationId) {
+        return findById(creditId)
+                .flatMap(doc -> {
+                    var newStatus = request.getStatus() == null ? null : request.getStatus().getValue();
+                    if (newStatus == null) {
+                        return Mono.just(doc);
+                    }
+                    // No se permite PAID por PATCH si balance > 0 (regla de negocio).
+                    if (CreditDocument.STATUS_PAID.equals(newStatus)
+                            && doc.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                        return Mono.error(new CreditConflictException(
+                                "Cannot set PAID while balance is greater than zero"));
+                    }
+                    doc.setStatus(newStatus);
+                    doc.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime());
+                    return creditRepository.save(doc)
+                            .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
+                                            .eventType(CreditEvent.UPDATED)
+                                            .creditId(saved.getId())
+                                            .customerId(saved.getCustomerId())
+                                            .status(saved.getStatus())
+                                            .balance(saved.getBalance().toPlainString())
+                                            .currency(saved.getCurrency())
+                                            .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
+                                            .correlationId(correlationId)
+                                            .build())
+                                    .thenReturn(saved));
+                });
+    }
+
+    @Override
+    public Mono<Void> deactivate(UUID creditId, String correlationId) {
+        return findById(creditId)
+                .flatMap(doc -> {
+                    doc.setStatus(CreditDocument.STATUS_CANCELLED);
+                    doc.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime());
+                    return creditRepository.save(doc)
+                            .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
+                                            .eventType(CreditEvent.CANCELLED)
+                                            .creditId(saved.getId())
+                                            .customerId(saved.getCustomerId())
+                                            .status(saved.getStatus())
+                                            .balance(saved.getBalance().toPlainString())
+                                            .currency(saved.getCurrency())
+                                            .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
+                                            .correlationId(correlationId)
+                                            .build())
+                                    .thenReturn(saved));
+                })
+                .then();
+    }
+
+    @Override
+    public Mono<OverdueInfo> getOverdueInfo(UUID creditId) {
+        return findById(creditId)
+                .map(doc -> {
+                    if (doc.getDueDate() == null || doc.getBalance().compareTo(BigDecimal.ZERO) <= 0) {
+                        return new OverdueInfo(false, BigDecimal.ZERO, 0L);
+                    }
+                    long days = ChronoUnit.DAYS.between(doc.getDueDate(),
+                            OffsetDateTime.now(ZoneOffset.UTC).toLocalDate());
+                    if (days <= 0) {
+                        return new OverdueInfo(false, BigDecimal.ZERO, 0L);
+                    }
+                    return new OverdueInfo(true, doc.getBalance(), days);
+                });
+    }
+
+    private Mono<Void> validateType(String type) {
+        if (!TYPE_PERSONAL.equals(type) && !TYPE_BUSINESS.equals(type)) {
+            return Mono.error(new CreditConflictException("Invalid credit type: " + type));
+        }
+        return Mono.empty();
+    }
+}
+=== src/main/java/com/banking/credit/service/impl/PaymentServiceImpl.java ===
+package com.banking.credit.service.impl;
+
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.exception.CreditNotFoundException;
+import com.banking.credit.exception.PaymentExceedsBalanceException;
+import com.banking.credit.exception.TransactionServiceException;
+import com.banking.credit.repository.CreditRepository;
+import com.banking.credit.dto.OperationAcceptedResponse;
+import com.banking.credit.service.PaymentService;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+/**
+ * Fachada de pagos: delega la operacion en ms-transaction-service.
+ * - Registra idempotencia por X-Transaction-ID (repeticion no genera doble efecto).
+ * - Timeout de Resilience4j (2 s) aplicado en la llamada saliente.
+ * - El saldo/estado del credito se actualiza por el flujo de eventos/transaction-service,
+ *   sin escrituras cruzadas a otras bases.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PaymentServiceImpl implements PaymentService {
+
+    private final CreditRepository creditRepository;
+    private final WebClient transactionWebClient;
+
+    @Value("${transaction-service.base-url:http://ms-transaction-service}")
+    private String baseUrl;
+
+    /** Registro de idempotencia en memoria por transaccion (transactionId -> respuesta). */
+    private final Map<UUID, OperationAcceptedResponse> idempotencyRegistry = new HashMap<>();
+
+    @Override
+    public Mono<OperationAcceptedResponse> pay(UUID creditId, UUID transactionId,
+                                               BigDecimal amount, String currency,
+                                               UUID sourceAccountId, UUID payerCustomerId,
+                                               String correlationId) {
+        // 1) Idempotencia: mismo X-Transaction-ID retorna la transaccion original.
+        synchronized (idempotencyRegistry) {
+            var previous = idempotencyRegistry.get(transactionId);
+            if (previous != null) {
+                log.info("Idempotent replay for transactionId={}", transactionId);
+                return Mono.just(previous);
+            }
+        }
+
+        // 2) Validar credito y deuda pendiente.
+        return creditRepository.findById(creditId)
+                .switchIfEmpty(Mono.error(new CreditNotFoundException(
+                        "Credit not found: " + creditId)))
+                .flatMap(credit -> validate(credit, amount, currency))
+                .flatMap(credit -> callTransactionService(creditId, transactionId, amount,
+                        currency, sourceAccountId, payerCustomerId, correlationId));
+    }
+
+    private Mono<CreditDocument> validate(CreditDocument credit, BigDecimal amount, String currency) {
+        if (!currency.equals(credit.getCurrency())) {
+            return Mono.error(new PaymentExceedsBalanceException(
+                    "Payment currency " + currency + " does not match credit currency "
+                            + credit.getCurrency()));
+        }
+        if (amount.compareTo(credit.getBalance()) > 0) {
+            return Mono.error(new PaymentExceedsBalanceException(
+                    "Payment " + amount + " exceeds outstanding balance "
+                            + credit.getBalance()));
+        }
+        return Mono.just(credit);
+    }
+
+    private Mono<OperationAcceptedResponse> callTransactionService(
+            UUID creditId, UUID transactionId, BigDecimal amount, String currency,
+            UUID sourceAccountId, UUID payerCustomerId, String correlationId) {
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("creditId", creditId);
+        payload.put("transactionId", transactionId);
+        payload.put("amount", amount.toPlainString());
+        payload.put("currency", currency);
+        payload.put("sourceAccountId", sourceAccountId);
+        if (payerCustomerId != null) {
+            payload.put("payerCustomerId", payerCustomerId);
+        }
+
+        return transactionWebClient.post()
+                .uri("/api/v1/transactions/credits/payments")
+                .header("X-Correlation-ID", correlationId)
+                .header("X-Transaction-ID", transactionId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(payload)
+                .retrieve()
+                .onStatus(status -> status.value() >= 400, response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .flatMap(body -> Mono.error(new TransactionServiceException(
+                                        "Transaction service rejected payment: "
+                                                + response.statusCode() + " " + body))))
+                .bodyToMono(OperationAcceptedResponse.class)
+                .timeout(java.time.Duration.ofSeconds(2))
+                .doOnNext(resp -> {
+                    synchronized (idempotencyRegistry) {
+                        idempotencyRegistry.put(transactionId, resp);
+                    }
+                    log.info("Payment delegated for credit {} [transactionId={}, status={}]",
+                            creditId, transactionId, resp.getStatus());
+                })
+                .onErrorMap(err -> err instanceof TransactionServiceException ? err
+                        : new TransactionServiceException(
+                        "Failed to reach transaction service: " + err.getMessage()));
+    }
+}
+
+=== src/test/java/com/banking/credit/service/impl/CreditServiceImplTest.java ===
+package com.banking.credit.service.impl;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import com.banking.credit.document.CreditDocument;
+import com.banking.credit.dto.CreditResponse;
+import com.banking.credit.dto.CreditStatus;
+import com.banking.credit.dto.CreditUpdateRequest;
+import com.banking.credit.event.CreditEventPublisher;
+import com.banking.credit.exception.CreditConflictException;
+import com.banking.credit.exception.CreditNotFoundException;
+import com.banking.credit.mapper.CreditMapper;
+import com.banking.credit.repository.CreditRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+class CreditServiceImplTest {
+
+    private CreditRepository repository;
+    private CreditEventPublisher eventPublisher;
+    private CreditServiceImpl service;
+
+    private final UUID customerId = UUID.randomUUID();
+
+    @BeforeEach
+    void setUp() {
+        repository = Mockito.mock(CreditRepository.class);
+        eventPublisher = Mockito.mock(CreditEventPublisher.class);
+        Mockito.when(eventPublisher.publish(any())).thenReturn(Mono.empty());
+        service = new CreditServiceImpl(repository, new CreditMapper(), eventPublisher);
+    }
+
+    private CreditDocument doc(String type, BigDecimal balance, LocalDate dueDate) {
+        return CreditDocument.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .type(type)
+                .status("ACTIVE")
+                .amount(new BigDecimal("5000.00"))
+                .balance(balance)
+                .currency("PEN")
+                .termMonths(12)
+                .dueDate(dueDate)
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+    }
+
+    @Test
+    void personalSecondCreditIsRejected409() {
+        // Simulamos que el cliente YA TIENE un crédito PERSONAL
+        Mockito.doReturn(Mono.just(true))
+                .when(repository).existsByCustomerIdAndType(customerId, "PERSONAL");
+
+        StepVerifier.create(service.create(customerId, "PERSONAL",
+                        new BigDecimal("1000.00"), "PEN", 6, "corr-1"))
+                .expectError(CreditConflictException.class)
+                .verify();
+    }
+
+    @Test
+    void businessMultipleCreditsAreAllowed() {
+        // Simulamos que el cliente YA TIENE créditos BUSINESS
+        Mockito.doReturn(Mono.just(true))
+                .when(repository).existsByCustomerIdAndType(customerId, "BUSINESS");
+
+        when(repository.save(any(CreditDocument.class)))
+                .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        // Al crear uno nuevo, debe permitirlo (pasar a guardar)
+        StepVerifier.create(service.create(customerId, "BUSINESS",
+                        new BigDecimal("1000.00"), "PEN", 6, "corr-1"))
+                .expectNextMatches(CreditResponse.class::isInstance)
+                .verifyComplete();
+    }
+
+    @Test
+    void patchPaidWithPositiveBalanceIsRejected409() {
+        var existing = doc("PERSONAL", new BigDecimal("500.00"), null);
+        when(repository.findById(existing.getId())).thenReturn(Mono.just(existing));
+
+        var req = new CreditUpdateRequest();
+        req.setStatus(CreditStatus.PAID);
+
+        StepVerifier.create(service.update(existing.getId(), req, "corr"))
+                .expectError(CreditConflictException.class)
+                .verify();
+    }
+
+    @Test
+    void patchPaidWithZeroBalanceIsAllowed() {
+        var existing = doc("PERSONAL", BigDecimal.ZERO, null);
+        when(repository.findById(existing.getId())).thenReturn(Mono.just(existing));
+        when(repository.save(any(CreditDocument.class)))
+                .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        var req = new CreditUpdateRequest();
+        req.setStatus(CreditStatus.PAID);
+
+        StepVerifier.create(service.update(existing.getId(), req, "corr"))
+                .expectNextMatches(r -> "PAID".equals(r.getStatus().toString()))
+                .verifyComplete();
+    }
+
+    @Test
+    void findByIdMissingFails404() {
+        when(repository.findById(any(UUID.class))).thenReturn(Mono.empty());
+
+        StepVerifier.create(service.findById(UUID.randomUUID()))
+                .expectError(CreditNotFoundException.class)
+                .verify();
+    }
+
+    @Test
+    void overdueStatusWithOverdueDebt() {
+        var dueDate = LocalDate.now(ZoneOffset.UTC).minusDays(10);
+        var existing = doc("PERSONAL", new BigDecimal("300.00"), dueDate);
+        when(repository.findById(existing.getId())).thenReturn(Mono.just(existing));
+
+        StepVerifier.create(service.getOverdueInfo(existing.getId()))
+                .expectNextMatches(info -> info.hasOverdueDebt()
+                        && info.daysOverdue() >= 10
+                        && info.overdueAmount().compareTo(new BigDecimal("300.00")) == 0)
+                .verifyComplete();
+    }
+
+    @Test
+    void overdueStatusWithoutDebt() {
+        var dueDate = LocalDate.now(ZoneOffset.UTC).minusDays(10);
+        var existing = doc("PERSONAL", BigDecimal.ZERO, dueDate);
+        when(repository.findById(existing.getId())).thenReturn(Mono.just(existing));
+
+        StepVerifier.create(service.getOverdueInfo(existing.getId()))
+                .expectNextMatches(info -> !info.hasOverdueDebt() && info.daysOverdue() == 0)
+                .verifyComplete();
+    }
+
+    @Test
+    void deactivateMarksCancelled() {
+        var existing = doc("PERSONAL", new BigDecimal("50.00"), null);
+        when(repository.findById(existing.getId())).thenReturn(Mono.just(existing));
+        when(repository.save(any(CreditDocument.class)))
+                .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        StepVerifier.create(service.deactivate(existing.getId(), "corr"))
+                .verifyComplete();
+
+        Mockito.verify(repository).save(any(CreditDocument.class));
+    }
+}
+=== src/main/resources/application.yml ===
+server:
+  port: 8083
+
+spring:
+  application:
+    name: ms-credit-service
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/banking_yanki}
+      auto-index-creation: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  security:
+    # Bandera leida por SecurityConfig para activar permitAll() en desarrollo.
+    # En produccion debe ser false o no definirse (default false).
+    dev-mode: ${SECURITY_DEV_MODE:true}
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9000}
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.banking.credit: DEBUG
+
+transaction-service:
+  base-url: ${TRANSACTION_SERVICE_URL:http://ms-transaction-service}
+
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 2s
+=== src/main/resources/openapi/ms-credit-service-openapi.yaml ===
+openapi: 3.0.3
+info:
+  title: Credit Service API
+  description: Gestión de créditos personales y empresariales. Pagos delegados a Transaction Service.
+  version: 1.0.0
+
+tags:
+  - name: Credit
+    description: Operaciones de gestión de créditos
+
+security:
+  - BearerAuth: []
+paths:
+  /api/v1/credits:
+    get:
+      tags:
+        - Credit
+      summary: Listar créditos
+      operationId: findAllCredits
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+      responses:
+        '200':
+          description: Lista paginada
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreditPage' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    post:
+      tags:
+        - Credit
+      summary: Crear crédito
+      operationId: createCredit
+      parameters:
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreditCreateRequest' } } }
+      responses:
+        '201':
+          description: Crédito creado
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreditResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/credits/{creditId}:
+    get:
+      tags:
+        - Credit
+      summary: Obtener crédito por ID
+      operationId: findCreditById
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+      responses:
+        '200':
+          description: Detalle del crédito
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreditResponse' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    patch:
+      tags:
+        - Credit
+      summary: Actualizar crédito (parcial)
+      description: Solo permite actualizaciones administrativas. Las transiciones de estado financiero (ej. PAID) deben ocurrir por pagos o procesos automáticos, no por PATCH. No se permite marcar como PAID si el balance es mayor a cero.
+      operationId: updateCredit
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreditUpdateRequest' } } }
+      responses:
+        '200':
+          description: Crédito actualizado
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreditResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    delete:
+      tags:
+        - Credit
+      summary: Baja lógica de crédito
+      operationId: deactivateCredit
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      responses:
+        '204': { description: Crédito desactivado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/credits/{creditId}/payments:
+    post:
+      tags:
+        - Credit
+      summary: Pagar crédito (propio o de terceros)
+      description: |
+        Idempotente. Delega en Transaction Service.
+        - Si el pago es parcial, reduce el balance.
+        - Si el pago es total, marca PAID.
+        - Si el pago supera la deuda pendiente, se rechaza con 422 (no se genera saldo a favor).
+        - Si el crédito está OVERDUE, se permite el pago, pero no se puede crear un nuevo producto.
+        - Si se intenta pagar dos veces con el mismo X-Transaction-ID, retorna la transacción original.
+      operationId: createCreditPayment
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+        - $ref: '#/components/parameters/TransactionIdHeader'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreditPaymentRequest' } } }
+      responses:
+        '202':
+          description: Pago aceptado
+          content: { application/json: { schema: { $ref: '#/components/schemas/OperationAcceptedResponse' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  /api/v1/credits/{creditId}/overdue-status:
+    get:
+      tags:
+        - Credit
+      summary: Consultar estado de deuda vencida
+      operationId: getOverdueStatus
+      parameters:
+        - $ref: '#/components/parameters/CreditIdPath'
+        - $ref: '#/components/parameters/CorrelationIdHeader'
+        - $ref: '#/components/parameters/ChannelIdHeader'
+      responses:
+        '200':
+          description: Estado de deuda
+          content: { application/json: { schema: { $ref: '#/components/schemas/OverdueStatusResponse' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+components:
+  securitySchemes:
+    BearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    PageParam: { name: page, in: query, schema: { type: integer, default: 0, minimum: 0 } }
+    SizeParam: { name: size, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 100 } }
+    CorrelationIdHeader: { name: X-Correlation-ID, in: header, required: true, schema: { type: string } }
+    ChannelIdHeader: { name: X-Channel-ID, in: header, required: true, schema: { type: string } }
+    TransactionIdHeader: { name: X-Transaction-ID, in: header, required: true, schema: { type: string, format: uuid } }
+    CreditIdPath: { name: creditId, in: path, required: true, schema: { type: string, format: uuid } }
+  schemas:
+    CreditType: { type: string, enum: [PERSONAL, BUSINESS] }
+    CreditStatus: { type: string, enum: [ACTIVE, PAID, OVERDUE, CANCELLED] }
+    CreditCreateRequest:
+      type: object
+      required: [customerId, type, amount, currency, termMonths]
+      properties:
+        customerId: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/CreditType' }
+        amount: { type: string, pattern: '^(?!0+(\.0+)?$)[0-9]+(\.[0-9]{1,2})?$' }
+        currency: { type: string, pattern: '^[A-Z]{3}$', example: PEN }
+        termMonths: { type: integer, minimum: 1 }
+    CreditUpdateRequest:
+      type: object
+      properties:
+        status: { $ref: '#/components/schemas/CreditStatus' }
+    CreditPaymentRequest:
+      type: object
+      required: [amount, currency, sourceAccountId]
+      properties:
+        amount: { type: string, pattern: '^(?!0+(\.0+)?$)[0-9]+(\.[0-9]{1,2})?$' }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        sourceAccountId: { type: string, format: uuid }
+        payerCustomerId: { type: string, format: uuid, description: "Permite pago de terceros" }
+    CreditResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        customerId: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/CreditType' }
+        status: { $ref: '#/components/schemas/CreditStatus' }
+        amount: { type: string }
+        balance: { type: string }
+        currency: { type: string }
+        dueDate: { type: string, format: date }
+        createdAt: { type: string, format: date-time }
+    CreditPage:
+      type: object
+      properties:
+        content: { type: array, items: { $ref: '#/components/schemas/CreditResponse' } }
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer }
+    OverdueStatusResponse:
+      type: object
+      properties:
+        creditId: { type: string, format: uuid }
+        hasOverdueDebt: { type: boolean }
+        overdueAmount: { type: string }
+        daysOverdue: { type: integer }
+    OperationAcceptedResponse:
+      type: object
+      properties:
+        operationId: { type: string, format: uuid }
+        status: { type: string }
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        timestamp: { type: string, format: date-time }
+        correlationId: { type: string }
+        details: { type: array, items: { type: string } }
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Unauthorized:
+      description: No autenticado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Forbidden:
+      description: No autorizado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    NotFound:
+      description: No encontrado
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Conflict:
+      description: Conflicto (ej. deuda vencida)
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    UnprocessableEntity:
+      description: Entidad no procesable
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    InternalServerError:
+      description: Error interno
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
