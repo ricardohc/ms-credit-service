@@ -22,7 +22,6 @@ import reactor.core.publisher.Mono;
 
 /**
  * Implementacion reactiva (Mono/Flux) de las reglas de negocio de creditos.
- * Transiciones financieras (PAID, OVERDUE) solo por pagos o procesos automaticos.
  */
 @Slf4j
 @Service
@@ -40,32 +39,30 @@ public class CreditServiceImpl implements CreditService {
     public Mono<CreditResponse> create(UUID customerId, String type, BigDecimal amount,
                                        String currency, Integer termMonths, String correlationId) {
         return validateType(type)
-                .then(creditRepository.findByCustomerIdAndType(customerId, type)
-                        .hasElement()
-                        .flatMap(exists -> {
-                            if (TYPE_PERSONAL.equals(type) && Boolean.TRUE.equals(exists)) {
-                                return Mono.error(new CreditConflictException(
-                                        "Customer already has a PERSONAL credit"));
-                            }
-                            return Mono.just(false);
-                        })
-                        .then(Mono.defer(() -> {
-                            var doc = creditMapper.toNewDocument(customerId, type, amount,
-                                    currency, termMonths);
-                            return creditRepository.save(doc)
-                                    .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
-                                                    .eventType(CreditEvent.CREATED)
-                                                    .creditId(saved.getId())
-                                                    .customerId(saved.getCustomerId())
-                                                    .status(saved.getStatus())
-                                                    .balance(saved.getBalance().toPlainString())
-                                                    .currency(saved.getCurrency())
-                                                    .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
-                                                    .correlationId(correlationId)
-                                                    .build())
-                                            .thenReturn(saved))
-                                    .map(creditMapper::toResponse);
-                        })));
+                // Consultamos de forma segura (solo un booleano) si ya existe
+                .then(creditRepository.existsByCustomerIdAndType(customerId, type))
+                .flatMap(exists -> {
+                    // Regla de Negocio: Bloquear solo si es PERSONAL y ya tiene uno
+                    if (TYPE_PERSONAL.equals(type) && Boolean.TRUE.equals(exists)) {
+                        return Mono.error(new CreditConflictException(
+                                "Customer already has a PERSONAL credit"));
+                    }
+                    // Si es BUSINESS, ignoramos si existe y permitimos crear otro
+                    var doc = creditMapper.toNewDocument(customerId, type, amount, currency, termMonths);
+                    return creditRepository.save(doc);
+                })
+                .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
+                                .eventType(CreditEvent.CREATED)
+                                .creditId(saved.getId())
+                                .customerId(saved.getCustomerId())
+                                .status(saved.getStatus())
+                                .balance(saved.getBalance().toPlainString())
+                                .currency(saved.getCurrency())
+                                .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
+                                .correlationId(correlationId)
+                                .build())
+                        .thenReturn(saved))
+                .map(creditMapper::toResponse);
     }
 
     @Override

@@ -55,8 +55,9 @@ class CreditServiceImplTest {
 
     @Test
     void personalSecondCreditIsRejected409() {
-        Mockito.doReturn(Mono.just(doc("PERSONAL", new BigDecimal("100.00"), null)))
-                .when(repository).findByCustomerIdAndType(customerId, "PERSONAL");
+        // Simulamos que el cliente YA TIENE un crédito PERSONAL
+        Mockito.doReturn(Mono.just(true))
+                .when(repository).existsByCustomerIdAndType(customerId, "PERSONAL");
 
         StepVerifier.create(service.create(customerId, "PERSONAL",
                         new BigDecimal("1000.00"), "PEN", 6, "corr-1"))
@@ -65,12 +66,15 @@ class CreditServiceImplTest {
     }
 
     @Test
-    void businessSecondCreditIsAllowed() {
-        Mockito.doReturn(Mono.just(doc("BUSINESS", new BigDecimal("100.00"), null)))
-                .when(repository).findByCustomerIdAndType(customerId, "BUSINESS");
+    void businessMultipleCreditsAreAllowed() {
+        // Simulamos que el cliente YA TIENE créditos BUSINESS
+        Mockito.doReturn(Mono.just(true))
+                .when(repository).existsByCustomerIdAndType(customerId, "BUSINESS");
+
         when(repository.save(any(CreditDocument.class)))
                 .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 
+        // Al crear uno nuevo, debe permitirlo (pasar a guardar)
         StepVerifier.create(service.create(customerId, "BUSINESS",
                         new BigDecimal("1000.00"), "PEN", 6, "corr-1"))
                 .expectNextMatches(CreditResponse.class::isInstance)
@@ -116,7 +120,6 @@ class CreditServiceImplTest {
 
     @Test
     void overdueStatusWithOverdueDebt() {
-        // Usar la MISMA zona horaria que el servicio para evitar drift
         var dueDate = LocalDate.now(ZoneOffset.UTC).minusDays(10);
         var existing = doc("PERSONAL", new BigDecimal("300.00"), dueDate);
         when(repository.findById(existing.getId())).thenReturn(Mono.just(existing));
