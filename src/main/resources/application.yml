@@ -17,6 +17,9 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
   security:
+    # Bandera leida por SecurityConfig para activar permitAll() en desarrollo.
+    # En produccion debe ser false o no definirse (default false).
+    dev-mode: ${SECURITY_DEV_MODE:true}
     oauth2:
       resourceserver:
         jwt:
@@ -46,20 +49,6 @@ springdoc:
 logging:
   level:
     com.banking.credit: DEBUG
-
----
-# Perfil dev: sin proveedor de identidad, seguridad temporal permitAll (common-rules.md)
-spring:
-  config:
-    activate:
-      on-profile: dev
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9000}
 
 transaction-service:
   base-url: ${TRANSACTION_SERVICE_URL:http://ms-transaction-service}
