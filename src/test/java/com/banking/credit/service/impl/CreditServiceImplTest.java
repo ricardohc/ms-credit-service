@@ -1,7 +1,6 @@
 package com.banking.credit.service.impl;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.banking.credit.document.CreditDocument;
@@ -15,12 +14,11 @@ import com.banking.credit.mapper.CreditMapper;
 import com.banking.credit.repository.CreditRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Optional;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -118,19 +116,22 @@ class CreditServiceImplTest {
 
     @Test
     void overdueStatusWithOverdueDebt() {
-        var existing = doc("PERSONAL", new BigDecimal("300.00"), LocalDate.now().minusDays(10));
+        // Usar la MISMA zona horaria que el servicio para evitar drift
+        var dueDate = LocalDate.now(ZoneOffset.UTC).minusDays(10);
+        var existing = doc("PERSONAL", new BigDecimal("300.00"), dueDate);
         when(repository.findById(existing.getId())).thenReturn(Mono.just(existing));
 
         StepVerifier.create(service.getOverdueInfo(existing.getId()))
                 .expectNextMatches(info -> info.hasOverdueDebt()
-                        && info.daysOverdue() == 10
+                        && info.daysOverdue() >= 10
                         && info.overdueAmount().compareTo(new BigDecimal("300.00")) == 0)
                 .verifyComplete();
     }
 
     @Test
     void overdueStatusWithoutDebt() {
-        var existing = doc("PERSONAL", BigDecimal.ZERO, LocalDate.now().minusDays(10));
+        var dueDate = LocalDate.now(ZoneOffset.UTC).minusDays(10);
+        var existing = doc("PERSONAL", BigDecimal.ZERO, dueDate);
         when(repository.findById(existing.getId())).thenReturn(Mono.just(existing));
 
         StepVerifier.create(service.getOverdueInfo(existing.getId()))

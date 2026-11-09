@@ -10,7 +10,6 @@ import com.banking.credit.mapper.CreditMapper;
 import com.banking.credit.repository.CreditRepository;
 import com.banking.credit.service.CreditService;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -55,15 +54,15 @@ public class CreditServiceImpl implements CreditService {
                                     currency, termMonths);
                             return creditRepository.save(doc)
                                     .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
-                                            .eventType(CreditEvent.CREATED)
-                                            .creditId(saved.getId())
-                                            .customerId(saved.getCustomerId())
-                                            .status(saved.getStatus())
-                                            .balance(saved.getBalance().toPlainString())
-                                            .currency(saved.getCurrency())
-                                            .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
-                                            .correlationId(correlationId)
-                                            .build())
+                                                    .eventType(CreditEvent.CREATED)
+                                                    .creditId(saved.getId())
+                                                    .customerId(saved.getCustomerId())
+                                                    .status(saved.getStatus())
+                                                    .balance(saved.getBalance().toPlainString())
+                                                    .currency(saved.getCurrency())
+                                                    .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
+                                                    .correlationId(correlationId)
+                                                    .build())
                                             .thenReturn(saved))
                                     .map(creditMapper::toResponse);
                         })));
@@ -102,15 +101,15 @@ public class CreditServiceImpl implements CreditService {
                     doc.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime());
                     return creditRepository.save(doc)
                             .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
-                                    .eventType(CreditEvent.UPDATED)
-                                    .creditId(saved.getId())
-                                    .customerId(saved.getCustomerId())
-                                    .status(saved.getStatus())
-                                    .balance(saved.getBalance().toPlainString())
-                                    .currency(saved.getCurrency())
-                                    .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
-                                    .correlationId(correlationId)
-                                    .build())
+                                            .eventType(CreditEvent.UPDATED)
+                                            .creditId(saved.getId())
+                                            .customerId(saved.getCustomerId())
+                                            .status(saved.getStatus())
+                                            .balance(saved.getBalance().toPlainString())
+                                            .currency(saved.getCurrency())
+                                            .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
+                                            .correlationId(correlationId)
+                                            .build())
                                     .thenReturn(saved));
                 });
     }
@@ -123,15 +122,15 @@ public class CreditServiceImpl implements CreditService {
                     doc.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime());
                     return creditRepository.save(doc)
                             .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
-                                    .eventType(CreditEvent.CANCELLED)
-                                    .creditId(saved.getId())
-                                    .customerId(saved.getCustomerId())
-                                    .status(saved.getStatus())
-                                    .balance(saved.getBalance().toPlainString())
-                                    .currency(saved.getCurrency())
-                                    .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
-                                    .correlationId(correlationId)
-                                    .build())
+                                            .eventType(CreditEvent.CANCELLED)
+                                            .creditId(saved.getId())
+                                            .customerId(saved.getCustomerId())
+                                            .status(saved.getStatus())
+                                            .balance(saved.getBalance().toPlainString())
+                                            .currency(saved.getCurrency())
+                                            .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
+                                            .correlationId(correlationId)
+                                            .build())
                                     .thenReturn(saved));
                 })
                 .then();
