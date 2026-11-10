@@ -7,7 +7,7 @@ spring:
 
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/banking_yanki}
+      uri: ${MONGODB_URI:mongodb://localhost:27017/banking_credit}
       auto-index-creation: true
 
   kafka:
@@ -17,8 +17,6 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
   security:
-    # Bandera leida por SecurityConfig para activar permitAll() en desarrollo.
-    # En produccion debe ser false o no definirse (default false).
     dev-mode: ${SECURITY_DEV_MODE:true}
     oauth2:
       resourceserver:

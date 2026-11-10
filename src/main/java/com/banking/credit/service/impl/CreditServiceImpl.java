@@ -1,18 +1,19 @@
 package com.banking.credit.service.impl;
 
 import com.banking.credit.document.CreditDocument;
-import com.banking.credit.event.CreditEvent;
 import com.banking.credit.dto.CreditResponse;
+import com.banking.credit.dto.CreditUpdateRequest;
 import com.banking.credit.event.CreditEventPublisher;
-import com.banking.credit.exception.CreditConflictException;
+import com.banking.credit.event.factory.CreditEventFactory;
 import com.banking.credit.exception.CreditNotFoundException;
 import com.banking.credit.mapper.CreditMapper;
 import com.banking.credit.repository.CreditRepository;
 import com.banking.credit.service.CreditService;
+import com.banking.credit.service.validator.CreditCreationValidator;
+import com.banking.credit.service.validator.CreditUpdateValidator;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,47 +21,33 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/**
- * Implementacion reactiva (Mono/Flux) de las reglas de negocio de creditos.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CreditServiceImpl implements CreditService {
 
     public static final String TYPE_PERSONAL = "PERSONAL";
-    public static final String TYPE_BUSINESS = "BUSINESS";
 
     private final CreditRepository creditRepository;
     private final CreditMapper creditMapper;
     private final CreditEventPublisher eventPublisher;
+    private final CreditEventFactory eventFactory;
+    private final CreditCreationValidator creationValidator;
+    private final CreditUpdateValidator updateValidator;
 
     @Override
     public Mono<CreditResponse> create(UUID customerId, String type, BigDecimal amount,
                                        String currency, Integer termMonths, String correlationId) {
-        return validateType(type)
-                // Consultamos de forma segura (solo un booleano) si ya existe
-                .then(creditRepository.existsByCustomerIdAndType(customerId, type))
-                .flatMap(exists -> {
-                    // Regla de Negocio: Bloquear solo si es PERSONAL y ya tiene uno
-                    if (TYPE_PERSONAL.equals(type) && Boolean.TRUE.equals(exists)) {
-                        return Mono.error(new CreditConflictException(
-                                "Customer already has a PERSONAL credit"));
-                    }
-                    // Si es BUSINESS, ignoramos si existe y permitimos crear otro
-                    var doc = creditMapper.toNewDocument(customerId, type, amount, currency, termMonths);
-                    return creditRepository.save(doc);
-                })
-                .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
-                                .eventType(CreditEvent.CREATED)
-                                .creditId(saved.getId())
-                                .customerId(saved.getCustomerId())
-                                .status(saved.getStatus())
-                                .balance(saved.getBalance().toPlainString())
-                                .currency(saved.getCurrency())
-                                .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
-                                .correlationId(correlationId)
-                                .build())
+        return creditRepository.existsByCustomerIdAndType(customerId, type)
+                .flatMap(exists -> creationValidator.validate(type, Boolean.TRUE.equals(exists)))
+                .then(Mono.defer(() -> creditRepository.save(
+                        creditMapper.toNewDocument(customerId, type, amount, currency, termMonths))))
+                .flatMap(saved -> eventPublisher.publish(eventFactory.insert(saved, correlationId))
+                        .onErrorResume(err -> {
+                            log.warn("No se pudo publicar evento INSERT para credito {}: {}",
+                                    saved.getId(), err.getMessage());
+                            return Mono.empty();
+                        })
                         .thenReturn(saved))
                 .map(creditMapper::toResponse);
     }
@@ -80,79 +67,24 @@ public class CreditServiceImpl implements CreditService {
     }
 
     @Override
-    public Mono<CreditDocument> update(UUID creditId, com.banking.credit.dto.CreditUpdateRequest request,
-                                       String correlationId) {
+    public Mono<CreditDocument> update(UUID creditId, CreditUpdateRequest request, String correlationId) {
         return findById(creditId)
+                .flatMap(doc -> updateValidator.validate(doc, request).thenReturn(doc))
                 .flatMap(doc -> {
-                    var newStatus = request.getStatus() == null ? null : request.getStatus().getValue();
-                    if (newStatus == null) {
+                    if (request == null || request.getStatus() == null) {
                         return Mono.just(doc);
                     }
-                    // No se permite PAID por PATCH si balance > 0 (regla de negocio).
-                    if (CreditDocument.STATUS_PAID.equals(newStatus)
-                            && doc.getBalance().compareTo(BigDecimal.ZERO) > 0) {
-                        return Mono.error(new CreditConflictException(
-                                "Cannot set PAID while balance is greater than zero"));
-                    }
-                    doc.setStatus(newStatus);
+                    doc.setStatus(request.getStatus().getValue());
                     doc.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime());
                     return creditRepository.save(doc)
-                            .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
-                                            .eventType(CreditEvent.UPDATED)
-                                            .creditId(saved.getId())
-                                            .customerId(saved.getCustomerId())
-                                            .status(saved.getStatus())
-                                            .balance(saved.getBalance().toPlainString())
-                                            .currency(saved.getCurrency())
-                                            .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
-                                            .correlationId(correlationId)
-                                            .build())
+                            .flatMap(saved -> eventPublisher.publish(
+                                            eventFactory.update(saved, correlationId))
+                                    .onErrorResume(err -> {
+                                        log.warn("No se pudo publicar evento UPDATE para credito {}: {}",
+                                                saved.getId(), err.getMessage());
+                                        return Mono.empty();
+                                    })
                                     .thenReturn(saved));
                 });
-    }
-
-    @Override
-    public Mono<Void> deactivate(UUID creditId, String correlationId) {
-        return findById(creditId)
-                .flatMap(doc -> {
-                    doc.setStatus(CreditDocument.STATUS_CANCELLED);
-                    doc.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime());
-                    return creditRepository.save(doc)
-                            .flatMap(saved -> eventPublisher.publish(CreditEvent.builder()
-                                            .eventType(CreditEvent.CANCELLED)
-                                            .creditId(saved.getId())
-                                            .customerId(saved.getCustomerId())
-                                            .status(saved.getStatus())
-                                            .balance(saved.getBalance().toPlainString())
-                                            .currency(saved.getCurrency())
-                                            .occurredAt(OffsetDateTime.now(ZoneOffset.UTC))
-                                            .correlationId(correlationId)
-                                            .build())
-                                    .thenReturn(saved));
-                })
-                .then();
-    }
-
-    @Override
-    public Mono<OverdueInfo> getOverdueInfo(UUID creditId) {
-        return findById(creditId)
-                .map(doc -> {
-                    if (doc.getDueDate() == null || doc.getBalance().compareTo(BigDecimal.ZERO) <= 0) {
-                        return new OverdueInfo(false, BigDecimal.ZERO, 0L);
-                    }
-                    long days = ChronoUnit.DAYS.between(doc.getDueDate(),
-                            OffsetDateTime.now(ZoneOffset.UTC).toLocalDate());
-                    if (days <= 0) {
-                        return new OverdueInfo(false, BigDecimal.ZERO, 0L);
-                    }
-                    return new OverdueInfo(true, doc.getBalance(), days);
-                });
-    }
-
-    private Mono<Void> validateType(String type) {
-        if (!TYPE_PERSONAL.equals(type) && !TYPE_BUSINESS.equals(type)) {
-            return Mono.error(new CreditConflictException("Invalid credit type: " + type));
-        }
-        return Mono.empty();
     }
 }

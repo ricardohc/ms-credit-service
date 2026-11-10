@@ -2,35 +2,22 @@ package com.banking.credit.exception;
 
 import com.banking.credit.dto.ErrorResponse;
 import java.time.OffsetDateTime;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.web.WebProperties;
-import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
-import org.springframework.boot.web.error.ErrorAttributeOptions;
-import org.springframework.boot.web.reactive.error.ErrorAttributes;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
-import org.springframework.web.reactive.function.server.RequestPredicates;
-import org.springframework.web.reactive.function.server.RouterFunction;
-import org.springframework.web.reactive.function.server.RouterFunctions;
-import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-/**
- * Manejo de errores comun con estructura ErrorResponse del contrato.
- */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static ErrorResponse build(String code, String message, String correlationId,
-                                       java.util.List<String> details) {
+                                       List<String> details) {
         var e = new ErrorResponse();
         e.setCode(code);
         e.setMessage(message);
@@ -56,20 +43,6 @@ public class GlobalExceptionHandler {
     public Mono<ResponseEntity<ErrorResponse>> conflict(CreditConflictException ex,
                                                         ServerWebExchange exchange) {
         return Mono.just(ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(build(ex.getCode(), ex.getMessage(), correlation(exchange), null)));
-    }
-
-    @ExceptionHandler(PaymentExceedsBalanceException.class)
-    public Mono<ResponseEntity<ErrorResponse>> unprocessable(PaymentExceedsBalanceException ex,
-                                                             ServerWebExchange exchange) {
-        return Mono.just(ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(build(ex.getCode(), ex.getMessage(), correlation(exchange), null)));
-    }
-
-    @ExceptionHandler(TransactionServiceException.class)
-    public Mono<ResponseEntity<ErrorResponse>> transactionError(TransactionServiceException ex,
-                                                                ServerWebExchange exchange) {
-        return Mono.just(ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(build(ex.getCode(), ex.getMessage(), correlation(exchange), null)));
     }
 

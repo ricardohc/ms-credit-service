@@ -14,10 +14,6 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-/**
- * Persistencia MongoDB separada de los DTOs de contrato (common-rules.md).
- * Dinero con BigDecimal, fechas en UTC.
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -37,11 +33,9 @@ public class CreditDocument {
     @Field("customerId")
     private UUID customerId;
 
-    /** PERSONAL | BUSINESS */
     @Field("type")
     private String type;
 
-    /** ACTIVE | PAID | OVERDUE | CANCELLED */
     @Field("status")
     private String status;
 
@@ -66,7 +60,6 @@ public class CreditDocument {
     @Field("updatedAt")
     private LocalDateTime updatedAt;
 
-    /** Control de concurrencia. */
     @Version
     private Long version;
 }

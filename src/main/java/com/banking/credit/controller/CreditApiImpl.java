@@ -1,21 +1,13 @@
 package com.banking.credit.controller;
 
 import com.banking.credit.api.CreditApi;
-import com.banking.credit.document.CreditDocument;
 import com.banking.credit.dto.CreditCreateRequest;
 import com.banking.credit.dto.CreditPage;
-import com.banking.credit.dto.CreditPaymentRequest;
 import com.banking.credit.dto.CreditResponse;
-import com.banking.credit.dto.CreditStatus;
 import com.banking.credit.dto.CreditUpdateRequest;
-import com.banking.credit.dto.OperationAcceptedResponse;
-import com.banking.credit.dto.OverdueStatusResponse;
 import com.banking.credit.mapper.CreditMapper;
 import com.banking.credit.service.CreditService;
-import com.banking.credit.service.PaymentService;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-/**
- * Implementacion del contrato generado (com.banking.credit.api.CreditApi).
- * Reactivo: nunca block() en el camino.
- */
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 public class CreditApiImpl implements CreditApi {
 
     private final CreditService creditService;
-    private final PaymentService paymentService;
     private final CreditMapper creditMapper;
 
     @Override
@@ -80,38 +69,5 @@ public class CreditApiImpl implements CreditApi {
         return body.flatMap(req -> creditService.update(creditId, req, xCorrelationID))
                 .map(creditMapper::toResponse)
                 .map(ResponseEntity::ok);
-    }
-
-    @Override
-    public Mono<ResponseEntity<Void>> deactivateCredit(UUID creditId, String xCorrelationID,
-                                                       String xChannelID, UUID xTransactionID,
-                                                       ServerWebExchange exchange) {
-        return creditService.deactivate(creditId, xCorrelationID)
-                .thenReturn(ResponseEntity.noContent().<Void>build());
-    }
-
-    @Override
-    public Mono<ResponseEntity<OperationAcceptedResponse>> createCreditPayment(
-            UUID creditId, String xCorrelationID, String xChannelID, UUID xTransactionID,
-            Mono<CreditPaymentRequest> body, ServerWebExchange exchange) {
-        return body.flatMap(req -> paymentService.pay(creditId, xTransactionID,
-                        new BigDecimal(req.getAmount()), req.getCurrency(),
-                        req.getSourceAccountId(), req.getPayerCustomerId(), xCorrelationID))
-                .map(resp -> ResponseEntity.status(HttpStatus.ACCEPTED).body(resp));
-    }
-
-    @Override
-    public Mono<ResponseEntity<OverdueStatusResponse>> getOverdueStatus(
-            UUID creditId, String xCorrelationID, String xChannelID,
-            ServerWebExchange exchange) {
-        return creditService.getOverdueInfo(creditId)
-                .map(info -> {
-                    var r = new OverdueStatusResponse();
-                    r.setCreditId(creditId);
-                    r.setHasOverdueDebt(info.hasOverdueDebt());
-                    r.setOverdueAmount(info.overdueAmount().toPlainString());
-                    r.setDaysOverdue((int) info.daysOverdue());
-                    return ResponseEntity.ok(r);
-                });
     }
 }

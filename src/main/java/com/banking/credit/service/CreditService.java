@@ -8,9 +8,6 @@ import java.util.UUID;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/**
- * Reglas de negocio de creditos (skill-credit.md).
- */
 public interface CreditService {
 
     Mono<CreditResponse> create(UUID customerId, String type, BigDecimal amount,
@@ -21,12 +18,4 @@ public interface CreditService {
     Mono<CreditDocument> findById(UUID creditId);
 
     Mono<CreditDocument> update(UUID creditId, CreditUpdateRequest request, String correlationId);
-
-    Mono<Void> deactivate(UUID creditId, String correlationId);
-
-    Mono<OverdueInfo> getOverdueInfo(UUID creditId);
-
-    /** Informacion de deuda vencida para el endpoint /overdue-status y validaciones. */
-    record OverdueInfo(boolean hasOverdueDebt, BigDecimal overdueAmount, long daysOverdue) {
-    }
 }

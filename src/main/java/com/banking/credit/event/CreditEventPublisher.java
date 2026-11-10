@@ -6,9 +6,6 @@ import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-/**
- * Productor de eventos de dominio hacia el topico banking.credit.events.v1.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -19,13 +16,14 @@ public class CreditEventPublisher {
     private final ReactiveKafkaProducerTemplate<String, CreditEvent> kafkaTemplate;
 
     public Mono<Void> publish(CreditEvent event) {
-        return kafkaTemplate.send(TOPIC, event.getCreditId().toString(), event)
+        String creditId = event.getPayload().getCreditId().toString();
+        return kafkaTemplate.send(TOPIC, creditId, event)
                 .doOnSuccess(result -> log.info(
                         "Event {} published for credit {} [correlationId={}]",
-                        event.getEventType(), event.getCreditId(), event.getCorrelationId()))
+                        event.getEventType(), creditId, event.getCorrelationId()))
                 .doOnError(err -> log.error(
                         "Failed to publish event {} for credit {}: {}",
-                        event.getEventType(), event.getCreditId(), err.getMessage()))
+                        event.getEventType(), creditId, err.getMessage()))
                 .onErrorResume(err -> Mono.empty())
                 .then();
     }

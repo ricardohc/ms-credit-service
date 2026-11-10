@@ -8,9 +8,6 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
-/**
- * Mappea entre el documento MongoDB y el DTO de contrato.
- */
 @Component
 public class CreditMapper {
 

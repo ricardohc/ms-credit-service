@@ -1,6 +1,5 @@
 package com.banking.credit.event;
 
-import com.banking.credit.service.impl.PaymentServiceImpl;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -13,9 +12,6 @@ import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import reactor.kafka.sender.SenderOptions;
 
-/**
- * Productor reactivo de Kafka para banking.credit.events.v1.
- */
 @Configuration
 public class KafkaConfig {
 

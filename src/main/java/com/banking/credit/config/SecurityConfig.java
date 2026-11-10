@@ -7,11 +7,6 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
-/**
- * Seguridad del microservicio.
- * Si spring.security.dev-mode=true (default en desarrollo): permitAll().
- * Si false (produccion): OAuth2 Resource Server con JWT.
- */
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
